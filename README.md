@@ -72,7 +72,12 @@ Alongside/
 ├── Views/
 │   ├── MovieListView.swift
 │   ├── MovieDetailView.swift
-│   └── OfflineAsyncImage.swift
+│   ├── MovieCardView.swift
+│   ├── OfflineAsyncImage.swift
+│   ├── EmptyStateView.swift
+│   ├── NoSearchResultsView.swift
+│   ├── LoadingView.swift
+│   └── SearchLoadingView.swift
 └── Core/Data/
     ├── PersistenceController.swift
     ├── Movie+CoreDataClass.swift
