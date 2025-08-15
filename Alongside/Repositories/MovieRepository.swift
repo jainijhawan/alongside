@@ -143,6 +143,7 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
         await withCheckedContinuation { continuation in
             let context = persistenceController.container.newBackgroundContext()
             context.perform {
+                // First, add/update movies
                 for movieResult in movies {
                     let fetchRequest: NSFetchRequest<Movie> = Movie.fetchRequest()
                     fetchRequest.predicate = NSPredicate(format: "id == %d", movieResult.id)
@@ -159,6 +160,9 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
                         _ = Movie.fromMovieResult(movieResult, context: context)
                     }
                 }
+                
+                // Enforce cache size limit of 50 movies
+                self.enforceCacheSizeLimit(in: context)
                 
                 do {
                     try context.save()
@@ -277,6 +281,38 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
                     }
                 }
             }
+        }
+    }
+    
+    private func enforceCacheSizeLimit(in context: NSManagedObjectContext) {
+        let maxMovies = 50
+        
+        let fetchRequest: NSFetchRequest<Movie> = Movie.fetchRequest()
+        fetchRequest.sortDescriptors = [
+            // Sort by popularity descending first, then by id ascending for consistency
+            NSSortDescriptor(keyPath: \Movie.popularity, ascending: false),
+            NSSortDescriptor(keyPath: \Movie.id, ascending: true)
+        ]
+        
+        do {
+            let allMovies = try context.fetch(fetchRequest)
+            let movieCount = allMovies.count
+            
+            if movieCount > maxMovies {
+                let moviesToDelete = Array(allMovies.dropFirst(maxMovies))
+                print("Cache limit exceeded (\(movieCount)/\(maxMovies)). Removing \(moviesToDelete.count) oldest movies.")
+                
+                // Remove associated images for movies being deleted
+                for movie in moviesToDelete {
+                    ImageStorageService.shared.removeStoredImage(movieId: Int(movie.id), imageType: .poster)
+                    ImageStorageService.shared.removeStoredImage(movieId: Int(movie.id), imageType: .backdrop)
+                    context.delete(movie)
+                }
+                
+                print("Cache size after cleanup: \(allMovies.count - moviesToDelete.count) movies")
+            }
+        } catch {
+            print("Failed to enforce cache size limit: \(error)")
         }
     }
     

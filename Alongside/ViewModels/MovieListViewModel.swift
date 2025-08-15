@@ -14,6 +14,7 @@ class MovieListViewModel: ObservableObject {
     @Published var searchResults: [MovieResult] = []
     @Published var isLoading = false
     @Published var isLoadingMore = false
+    @Published var isSearching = false
     @Published var errorMessage: String?
     @Published var isOnline = true
     
@@ -82,24 +83,38 @@ class MovieListViewModel: ObservableObject {
         
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             searchResults = []
+            isSearching = false
             return
         }
+        
+        isSearching = true
         
         searchTask = Task {
             do {
                 // Add small delay for better UX
-                try await Task.sleep(nanoseconds: 3000_000_000) // 0.3 seconds
+                try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+                
+                // Check if task was cancelled after delay
+                guard !Task.isCancelled else { 
+                    isSearching = false
+                    return 
+                }
                 
                 let results = try await repository.searchMovies(query: query, page: 1)
                 
-                // Check if task was cancelled
-                guard !Task.isCancelled else { return }
+                // Check if task was cancelled after API call
+                guard !Task.isCancelled else { 
+                    isSearching = false
+                    return 
+                }
                 
                 searchResults = results
+                isSearching = false
             } catch {
                 // Handle search error silently or show non-intrusive error
                 print("Search error: \(error)")
                 searchResults = []
+                isSearching = false
             }
         }
     }

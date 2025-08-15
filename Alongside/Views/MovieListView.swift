@@ -32,15 +32,19 @@ struct MovieListView: View {
                 }
                 
                 // Movie List
-                if viewModel.movies.isEmpty && !viewModel.isLoading {
-                    EmptyStateView(
-                        isOnline: viewModel.isOnline,
-                        onRetry: {
-                            Task {
-                                await viewModel.loadMovies(forceRefresh: true)
+                if filteredMovies.isEmpty && !viewModel.isLoading && !viewModel.isSearching {
+                    if searchText.isEmpty {
+                        EmptyStateView(
+                            isOnline: viewModel.isOnline,
+                            onRetry: {
+                                Task {
+                                    await viewModel.loadMovies(forceRefresh: true)
+                                }
                             }
-                        }
-                    )
+                        )
+                    } else {
+                        NoSearchResultsView(searchQuery: searchText)
+                    }
                 } else {
                     ScrollView {
                         LazyVGrid(columns: [
@@ -78,12 +82,14 @@ struct MovieListView: View {
                                 }
                                 .padding()
                             }
+                            
                         }
                         .padding()
                     }
                     .refreshable {
                         await viewModel.loadMovies(forceRefresh: true)
                     }
+                    .scrollDismissesKeyboard(.interactively)
                 }
             }
             .navigationTitle("Movie Explorer")
@@ -95,6 +101,8 @@ struct MovieListView: View {
             .overlay {
                 if viewModel.isLoading {
                     LoadingView()
+                } else if viewModel.isSearching && !searchText.isEmpty {
+                    SearchLoadingView()
                 }
             }
             .alert("Error", isPresented: $showingAlert) {
@@ -208,6 +216,40 @@ struct EmptyStateView: View {
     }
 }
 
+struct NoSearchResultsView: View {
+    let searchQuery: String
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+            
+            Text("No Results Found")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            VStack(spacing: 8) {
+                Text("No movies found for")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                
+                Text("\"\(searchQuery)\"")
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+            }
+            
+            Text("Try searching with different keywords or check your spelling.")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+        }
+        .padding()
+    }
+}
+
 struct LoadingView: View {
     var body: some View {
         ZStack {
@@ -218,6 +260,26 @@ struct LoadingView: View {
                 ProgressView()
                     .scaleEffect(1.5)
                 Text("Loading Movies...")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            }
+            .padding(32)
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct SearchLoadingView: View {
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                Text("Searching...")
                     .font(.headline)
                     .foregroundColor(.primary)
             }
