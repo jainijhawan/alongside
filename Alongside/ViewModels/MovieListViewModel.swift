@@ -31,7 +31,17 @@ class MovieListViewModel: ObservableObject {
         if let movieRepository = self.repository as? MovieRepository {
             movieRepository.$isConnected
                 .receive(on: DispatchQueue.main)
-                .assign(to: \.isOnline, on: self)
+                .sink { [weak self] isConnected in
+                    let wasOffline = self?.isOnline == false
+                    self?.isOnline = isConnected
+                    
+                    // Auto-refresh when connection is restored
+                    if wasOffline && isConnected {
+                        Task {
+                            await self?.loadMovies(forceRefresh: true)
+                        }
+                    }
+                }
                 .store(in: &cancellables)
         }
     }
