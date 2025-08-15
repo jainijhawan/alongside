@@ -13,12 +13,15 @@ class MovieListViewModel: ObservableObject {
     @Published var movies: [MovieResult] = []
     @Published var searchResults: [MovieResult] = []
     @Published var isLoading = false
+    @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var isOnline = true
     
     private let repository: MovieRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     private var searchTask: Task<Void, Never>?
+    private var currentPage = 1
+    private var canLoadMore = true
     
     init(repository: MovieRepositoryProtocol? = nil) {
         self.repository = repository ?? MovieRepository()
@@ -37,10 +40,13 @@ class MovieListViewModel: ObservableObject {
         
         isLoading = true
         errorMessage = nil
+        currentPage = 1
+        canLoadMore = true
         
         do {
-            let fetchedMovies = try await repository.getPopularMovies(page: 1, forceRefresh: forceRefresh)
+            let fetchedMovies = try await repository.getPopularMovies(page: currentPage, forceRefresh: forceRefresh)
             movies = fetchedMovies
+            canLoadMore = fetchedMovies.count >= 20 // TMDb typically returns 20 results per page
         } catch {
             errorMessage = error.localizedDescription
             
@@ -50,6 +56,24 @@ class MovieListViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+    
+    func loadMoreMovies() async {
+        guard !isLoadingMore && !isLoading && canLoadMore && isOnline else { return }
+        
+        isLoadingMore = true
+        currentPage += 1
+        
+        do {
+            let moreMovies = try await repository.getPopularMovies(page: currentPage, forceRefresh: false)
+            movies.append(contentsOf: moreMovies)
+            canLoadMore = moreMovies.count >= 20
+        } catch {
+            print("Failed to load more movies: \(error)")
+            currentPage -= 1 // Revert page increment on failure
+        }
+        
+        isLoadingMore = false
     }
     
     func searchMovies(query: String) {

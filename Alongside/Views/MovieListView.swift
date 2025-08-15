@@ -52,6 +52,31 @@ struct MovieListView: View {
                                     MovieCardView(movie: movie)
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .onAppear {
+                                    // Load more movies when approaching the end
+                                    if searchText.isEmpty && movie == filteredMovies.last {
+                                        Task {
+                                            await viewModel.loadMoreMovies()
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Loading more indicator
+                            if viewModel.isLoadingMore && searchText.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    VStack {
+                                        ProgressView()
+                                            .scaleEffect(1.2)
+                                            .padding()
+                                        Text("Loading more...")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding()
                             }
                         }
                         .padding()

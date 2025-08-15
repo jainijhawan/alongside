@@ -57,11 +57,12 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
     // MARK: - Public Methods
     
     func getPopularMovies(page: Int = 1, forceRefresh: Bool = false) async throws -> [MovieResult] {
-        if isConnected && (forceRefresh || page == 1) {
+        if isConnected {
             do {
                 let response = try await networkService.fetchPopularMovies(page: page)
                 
-                if page == 1 {
+                // Only clear cache when refreshing page 1
+                if page == 1 && forceRefresh {
                     await clearCachedMovies()
                 }
                 
@@ -69,10 +70,20 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
                 return response.results
             } catch {
                 print("Network request failed: \(error). Loading from cache...")
-                return await getCachedMovies()
+                if page == 1 {
+                    return await getCachedMovies()
+                } else {
+                    // For subsequent pages, if network fails, return empty array
+                    return []
+                }
             }
         } else {
-            return await getCachedMovies()
+            if page == 1 {
+                return await getCachedMovies()
+            } else {
+                // For offline mode, only return results for page 1
+                return []
+            }
         }
     }
     
