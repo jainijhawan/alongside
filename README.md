@@ -22,6 +22,29 @@ A SwiftUI app for exploring movies with offline support using TMDb API and Core 
 - **Core Data**: Local caching and offline support
 - **SwiftUI + Async/Await**: Modern UI and concurrency
 
+## File Structure
+
+```
+Alongside/
+├── Models/
+│   └── MovieModel.swift
+├── Services/
+│   ├── NetworkService.swift
+│   └── ImageStorageService.swift
+├── Repositories/
+│   └── MovieRepository.swift
+├── ViewModels/
+│   └── MovieListViewModel.swift
+├── Views/
+│   ├── MovieListView.swift
+│   ├── MovieDetailView.swift
+│   └── OfflineAsyncImage.swift
+└── Core/Data/
+    ├── PersistenceController.swift
+    ├── Movie+CoreDataClass.swift
+    └── Movie+CoreDataProperties.swift
+```
+
 ## Requirements
 
 - Xcode 15.0+
