@@ -2,6 +2,11 @@
 
 A SwiftUI app for exploring movies with offline support using TMDb API and Core Data.
 
+# Demo Video 🎬
+
+
+https://github.com/user-attachments/assets/cf163b6d-7129-4034-a559-fd629b208ed3
+
 ## Features
 
 ### Core Movie Browsing
