@@ -17,7 +17,11 @@ struct MovieDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                 // Hero Section with Backdrop
                 ZStack(alignment: .topLeading) {
-                    AsyncImage(url: URL(string: movie.fullBackdropURL ?? movie.fullPosterURL ?? "")) { image in
+                    OfflineAsyncImage(
+                        url: URL(string: movie.fullBackdropURL ?? movie.fullPosterURL ?? ""),
+                        movieId: movie.id,
+                        imageType: movie.fullBackdropURL != nil ? .backdrop : .poster
+                    ) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -132,7 +136,11 @@ struct MovieDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
-                            AsyncImage(url: URL(string: posterURL)) { image in
+                            OfflineAsyncImage(
+                                url: URL(string: posterURL),
+                                movieId: movie.id,
+                                imageType: .poster
+                            ) { image in
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)

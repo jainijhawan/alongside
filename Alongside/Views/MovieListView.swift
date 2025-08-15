@@ -105,7 +105,11 @@ struct MovieCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AsyncImage(url: URL(string: movie.fullPosterURL ?? "")) { image in
+            OfflineAsyncImage(
+                url: URL(string: movie.fullPosterURL ?? ""),
+                movieId: movie.id,
+                imageType: .poster
+            ) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)

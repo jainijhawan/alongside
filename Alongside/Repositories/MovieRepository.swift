@@ -158,6 +158,11 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
                 continuation.resume()
             }
         }
+        
+        // Preload images for offline use
+        if isConnected {
+            await preloadImages(for: movies)
+        }
     }
     
     private func cacheMovie(_ movieResult: MovieResult) async {
@@ -233,4 +238,35 @@ class MovieRepository: ObservableObject, MovieRepositoryProtocol {
         movie.adult = result.adult
         movie.popularity = result.popularity
     }
+    
+    private func preloadImages(for movies: [MovieResult]) async {
+        await withTaskGroup(of: Void.self) { group in
+            for movie in movies {
+                // Preload poster image
+                if let posterURL = movie.fullPosterURL,
+                   !ImageStorageService.shared.hasStoredImage(movieId: movie.id, imageType: .poster) {
+                    group.addTask {
+                        _ = await ImageStorageService.shared.downloadAndStoreImage(
+                            from: posterURL,
+                            movieId: movie.id,
+                            imageType: .poster
+                        )
+                    }
+                }
+                
+                // Preload backdrop image
+                if let backdropURL = movie.fullBackdropURL,
+                   !ImageStorageService.shared.hasStoredImage(movieId: movie.id, imageType: .backdrop) {
+                    group.addTask {
+                        _ = await ImageStorageService.shared.downloadAndStoreImage(
+                            from: backdropURL,
+                            movieId: movie.id,
+                            imageType: .backdrop
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
 }
